@@ -200,7 +200,8 @@ tasks.register<JacocoReport>("unitBranchCoverage") {
 }
 
 // Run the HTTP integration suite separately from the unit coverage measurement.
-tasks.named<Test>("testDebugUnitTest") {
+tasks.withType<Test>().configureEach {
+    if (name != "testDebugUnitTest") return@configureEach
     if (providers.gradleProperty("onlyIntegration").isPresent) {
         filter.includeTestsMatching("*HttpClientIntegrationTest")
     } else {
