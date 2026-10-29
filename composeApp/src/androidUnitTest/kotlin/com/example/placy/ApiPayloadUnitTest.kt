@@ -49,6 +49,14 @@ class ApiPayloadUnitTest {
         val http = client("""[{"photoUUID":"a","latitude":0.0,"longitude":0.0}]""")
         try { assertEquals(GeoMark("a",0.0,0.0), ApiService(http).getAllMarks().single()) } finally { http.close() }
     }
+    @Test fun failedGetDoesNotTreatErrorBodyAsMarks() = runTest {
+        val http = client("""[{"photoUUID":"a","latitude":1.0,"longitude":2.0}]""", HttpStatusCode.ServiceUnavailable)
+        try { assertTrue(ApiService(http).getAllMarks().isEmpty()) } finally { http.close() }
+    }
+    @Test fun cancellationPropagatesFromGet() = runTest {
+        val http = HttpClient(MockEngine { throw kotlinx.coroutines.CancellationException("cancelled") })
+        try { kotlin.test.assertFailsWith<kotlinx.coroutines.CancellationException> { ApiService(http).getAllMarks() } } finally { http.close() }
+    }
     @Test fun serviceUnavailableRejectsSave() = runTest {
         val http = client("",HttpStatusCode.ServiceUnavailable)
         try { assertFalse(ApiService(http).saveMark(GeoMark("a",0.0,0.0))) } finally { http.close() }

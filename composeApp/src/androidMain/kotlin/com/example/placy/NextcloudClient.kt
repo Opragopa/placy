@@ -1,5 +1,6 @@
 package com.example.placy
 
+import kotlinx.coroutines.CancellationException
 import io.ktor.client.HttpClient
 import io.ktor.client.request.put
 import io.ktor.client.request.get
@@ -26,6 +27,8 @@ class NextcloudClient(
             }
 
             return response.status.isSuccess()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             e.printStackTrace()
             return false
@@ -45,6 +48,8 @@ class NextcloudClient(
                 println("Download failed: ${response.status}")
                 null
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             e.printStackTrace()
             null
