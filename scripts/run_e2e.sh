@@ -14,5 +14,7 @@ else
   test_exit=$?
 fi
 mkdir -p e2e-screenshots
-adb pull /sdcard/Android/data/com.example.placy/files/e2e-screenshots/. e2e-screenshots/ || true
+for name in map card fullscreen before-marker-tap; do
+  adb pull "/sdcard/placy-$name.png" e2e-screenshots/ || true
+done
 exit "$test_exit"

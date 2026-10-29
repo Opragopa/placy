@@ -45,6 +45,7 @@ class MapE2ETest {
             compose.onAllNodes(androidx.compose.ui.test.hasContentDescription("Карта, публикаций: 1"))
                 .fetchSemanticsNodes().isNotEmpty()
         }
+        saveScreenshot("before-marker-tap")
         compose.onNodeWithTag("map-screen").performTouchInput {
             click(Offset(center.x, center.y - 5f))
         }
@@ -53,14 +54,7 @@ class MapE2ETest {
 
     private fun saveScreenshot(name: String) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val directory = File(requireNotNull(instrumentation.targetContext.getExternalFilesDir(null)), "e2e-screenshots")
-        check(directory.isDirectory || directory.mkdirs())
-        val bitmap = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
-        try {
-            FileOutputStream(File(directory, "$name.png")).use { stream ->
-                check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream))
-            }
-        } finally { bitmap.recycle() }
+        instrumentation.uiAutomation.executeShellCommand("screencap -p /sdcard/placy-$name.png").close()
     }
 
     // E2E-08 / F_Post_03: selecting the map marker opens a card.
