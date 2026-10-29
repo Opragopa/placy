@@ -47,6 +47,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -83,6 +85,9 @@ import ru.sulgik.mapkit.map.IconStyle
 import ru.sulgik.mapkit.map.RotationType
 import kotlin.math.max
 import kotlin.math.min
+
+val MapCameraSnapshotKey = SemanticsPropertyKey<String>("MapCameraSnapshot")
+var SemanticsPropertyReceiver.mapCameraSnapshot by MapCameraSnapshotKey
 
 @Composable
 @Preview
@@ -122,7 +127,7 @@ fun TempMapScreen() {
             Box(modifier = Modifier.fillMaxSize()) {
                 // Карта
                 YandexMap(
-                    modifier = Modifier.fillMaxSize().testTag("map-screen").semantics { contentDescription = "Карта, публикаций: ${marks.size}" },
+                    modifier = Modifier.fillMaxSize().testTag("map-screen").semantics { contentDescription = "Карта, публикаций: ${marks.size}"; mapCameraSnapshot = cameraPositionState.position.toString() },
                     cameraPositionState = cameraPositionState
                 ) {
                     marks.forEach { mark ->
