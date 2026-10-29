@@ -1,7 +1,6 @@
 package com.example.placy
 
 import android.Manifest
-import android.view.KeyEvent
 import android.view.MotionEvent
 import android.os.SystemClock
 import android.graphics.Bitmap
@@ -70,7 +69,7 @@ class MapE2ETest {
     // E2E-11 / F_Post_06: Android back dismisses the card.
     @Test fun systemBackClosesCard() = isolatedLaunch {
         openFixtureCard()
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("input keyevent 4").close()
         compose.onNodeWithTag("post-card").assertDoesNotExist()
         compose.onNodeWithTag("map-screen").assertIsDisplayed()
     }
@@ -99,12 +98,14 @@ class MapE2ETest {
 
     // E2E-04 / F_Map_03: spreading two fingers changes the map zoom.
     @Test fun pinchChangesTheMapScale() = isolatedLaunch {
-        val before = cameraSnapshot()
+        val before = compose.onNodeWithTag("map-screen").fetchSemanticsNode().config[MapZoomKey]
         compose.onNodeWithTag("map-screen").performTouchInput {
             pinch(Offset(center.x - 30f, center.y), Offset(center.x - 120f, center.y),
                 Offset(center.x + 30f, center.y), Offset(center.x + 120f, center.y), 600)
         }
-        compose.waitUntil(timeoutMillis = 10000) { cameraSnapshot() != before }
+        compose.waitUntil(timeoutMillis = 10000) {
+            compose.onNodeWithTag("map-screen").fetchSemanticsNode().config[MapZoomKey] != before
+        }
     }
 
     // E2E-10 / F_Post_05: a tap outside the card dismisses it.
@@ -198,7 +199,7 @@ class MapE2ETest {
         compose.waitUntil(timeoutMillis = 20000) {
             compose.onAllNodes(androidx.compose.ui.test.hasTestTag("map-screen")).fetchSemanticsNodes().isEmpty()
         }
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("input keyevent 4").close()
         compose.waitUntil(timeoutMillis = 15000) {
             compose.onAllNodes(androidx.compose.ui.test.hasTestTag("map-screen")).fetchSemanticsNodes().isNotEmpty()
         }
@@ -219,6 +220,9 @@ class MapE2ETest {
 
     // E2E-07 / F_Map_06: the camera control is visible from the map.
     @Test fun cameraControlIsDisplayedOnMap() = isolatedLaunch {
-        compose.onNodeWithContentDescription("Камера").assertIsDisplayed()
+        val map = compose.onNodeWithTag("map-screen").fetchSemanticsNode().boundsInRoot
+        val camera = compose.onNodeWithContentDescription("Камера").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        assertTrue(kotlin.math.abs(camera.center.x - map.center.x) < map.width * 0.03f)
+        assertTrue(camera.bottom <= map.bottom && camera.bottom > map.bottom - map.height * 0.25f)
     }
 }

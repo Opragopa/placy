@@ -87,7 +87,9 @@ import kotlin.math.max
 import kotlin.math.min
 
 val MapCameraSnapshotKey = SemanticsPropertyKey<String>("MapCameraSnapshot")
+val MapZoomKey = SemanticsPropertyKey<Float>("MapZoom")
 var SemanticsPropertyReceiver.mapCameraSnapshot by MapCameraSnapshotKey
+var SemanticsPropertyReceiver.mapZoom by MapZoomKey
 
 @Composable
 @Preview
@@ -127,7 +129,7 @@ fun TempMapScreen() {
             Box(modifier = Modifier.fillMaxSize()) {
                 // Карта
                 YandexMap(
-                    modifier = Modifier.fillMaxSize().testTag("map-screen").semantics { contentDescription = "Карта, публикаций: ${marks.size}"; mapCameraSnapshot = cameraPositionState.position.toString() },
+                    modifier = Modifier.fillMaxSize().testTag("map-screen").semantics { contentDescription = "Карта, публикаций: ${marks.size}"; mapCameraSnapshot = cameraPositionState.position.toString(); mapZoom = cameraPositionState.position.zoom },
                     cameraPositionState = cameraPositionState
                 ) {
                     marks.forEach { mark ->
