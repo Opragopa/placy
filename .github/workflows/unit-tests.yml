@@ -32,6 +32,8 @@ jobs:
         run: |
           mkdir -p test-evidence/integration
           cp -R composeApp/build/test-results/testDebugUnitTest test-evidence/integration/ 2>/dev/null || true
+      - name: Compile Android instrumentation tests
+        run: ./gradlew :composeApp:assembleDebugAndroidTest
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
