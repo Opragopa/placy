@@ -45,6 +45,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -99,7 +101,7 @@ fun TempMapScreen() {
     val apiService = remember { ApiService(NetworkModule.httpClient) }
     var postViewer by remember { mutableStateOf<PostViewerState>(PostViewerState.Hidden) }
     val scope = rememberCoroutineScope()
-    val cameraPositionState = rememberCameraPositionState()
+    val cameraPositionState = rememberCameraPositionState { position = position.copy(zoom = 12f) }
     val context = LocalPlatformContext.current
     val imageLoader = remember {
         getNextcloudImageLoader(context)
@@ -120,7 +122,7 @@ fun TempMapScreen() {
             Box(modifier = Modifier.fillMaxSize()) {
                 // Карта
                 YandexMap(
-                    modifier = Modifier.fillMaxSize().testTag("map-screen"),
+                    modifier = Modifier.fillMaxSize().testTag("map-screen").semantics { contentDescription = "Карта, публикаций: ${marks.size}" },
                     cameraPositionState = cameraPositionState
                 ) {
                     marks.forEach { mark ->
