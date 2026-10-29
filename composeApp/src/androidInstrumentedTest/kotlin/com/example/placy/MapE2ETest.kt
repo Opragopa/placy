@@ -44,9 +44,25 @@ class MapE2ETest {
             compose.onAllNodes(androidx.compose.ui.test.hasContentDescription("Карта, публикаций: 1"))
                 .fetchSemanticsNodes().isNotEmpty()
         }
+        var bounds: IntArray? = null
+        compose.waitUntil(timeoutMillis = 15000) {
+            bounds = screenshotRedBounds()
+            val b = bounds
+            b != null && b[2] - b[0] > 20 && b[3] - b[1] > 20
+        }
         saveScreenshot("before-marker-tap")
-        compose.onNodeWithTag("map-screen").performTouchInput {
-            click(Offset(center.x, center.y - 5f))
+        val b = requireNotNull(bounds)
+        val x = (b[0] + b[2]) / 2f
+        val y = (b[1] + b[3]) / 2f
+        val now = SystemClock.uptimeMillis()
+        val down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x, y, 0)
+        val up = MotionEvent.obtain(now, now + 50, MotionEvent.ACTION_UP, x, y, 0)
+        try {
+            InstrumentationRegistry.getInstrumentation().sendPointerSync(down)
+            InstrumentationRegistry.getInstrumentation().sendPointerSync(up)
+        } finally { down.recycle(); up.recycle() }
+        compose.waitUntil(timeoutMillis = 10000) {
+            compose.onAllNodes(androidx.compose.ui.test.hasTestTag("post-card")).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("post-card").assertIsDisplayed()
     }
@@ -140,7 +156,7 @@ class MapE2ETest {
         val bmp = requireNotNull(InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot())
         try {
             var left = bmp.width; var top = bmp.height; var right = -1; var bottom = -1
-            for (y in 0 until bmp.height step 3) for (x in 0 until bmp.width step 3) {
+            for (y in 0 until (bmp.height * 3 / 4) step 3) for (x in 0 until bmp.width step 3) {
                 val px = bmp.getPixel(x, y)
                 val red = android.graphics.Color.red(px)
                 val green = android.graphics.Color.green(px)
