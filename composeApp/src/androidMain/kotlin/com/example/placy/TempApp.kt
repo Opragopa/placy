@@ -97,9 +97,7 @@ fun TempMapScreen() {
     var marks by remember { mutableStateOf<List<GeoMark>>(emptyList()) }
     var result by remember { mutableStateOf<GeolocatorResult?>(null) }
     val apiService = remember { ApiService(NetworkModule.httpClient) }
-    var selectedMark by remember { mutableStateOf<GeoMark?>(null) }
-    var showSheet by remember { mutableStateOf(false) }
-    var showFullscreen by remember { mutableStateOf(false) }
+    var postViewer by remember { mutableStateOf<PostViewerState>(PostViewerState.Hidden) }
     val scope = rememberCoroutineScope()
     val cameraPositionState = rememberCameraPositionState()
     val context = LocalPlatformContext.current
@@ -143,29 +141,33 @@ fun TempMapScreen() {
                                 zIndex = 1f
                             ),
                             onTap = {
-                                selectedMark = mark
-                                showSheet = true
+                                postViewer = reducePostViewer(postViewer, PostViewerAction.Select(mark))
                                 true
                             }
                         )
                     }
                 }
 
-                if (showSheet && selectedMark != null) {
-                    val imageUrl = "${BuildConfig.SERVER_URL}/remote.php/dav/files/${BuildConfig.USERNAME}/${selectedMark!!.photoUUID}.jpg"
-                    if (showFullscreen) {
-                        SimpleFullScreenImageViewer(
+                val visibleMark = when (val state = postViewer) {
+                    is PostViewerState.Card -> state.mark
+                    is PostViewerState.Photo -> state.mark
+                    PostViewerState.Hidden -> null
+                }
+                if (visibleMark != null) {
+                    val imageUrl = "${BuildConfig.SERVER_URL}/remote.php/dav/files/${BuildConfig.USERNAME}/${visibleMark.photoUUID}.jpg"
+                    when (postViewer) {
+                        is PostViewerState.Photo -> SimpleFullScreenImageViewer(
                             imageUrl = imageUrl,
-                            onDismiss = { showFullscreen = false; showSheet = false },
+                            onDismiss = { postViewer = reducePostViewer(postViewer, PostViewerAction.Dismiss) },
                             imageLoader = imageLoader
                         )
-                    } else {
-                        PostCard(
+                        is PostViewerState.Card -> PostCard(
                             imageUrl = imageUrl,
                             imageLoader = imageLoader,
-                            onOpenPhoto = { showFullscreen = true },
-                            onDismiss = { showSheet = false }
+                            onOpenPhoto = { postViewer = reducePostViewer(postViewer, PostViewerAction.OpenPhoto) },
+                            onDismiss = { postViewer = reducePostViewer(postViewer, PostViewerAction.Dismiss) }
                         )
+                        PostViewerState.Hidden -> Unit
                     }
                 }
 
