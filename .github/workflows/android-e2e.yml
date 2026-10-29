@@ -63,19 +63,7 @@ jobs:
           api-level: 29
           arch: x86_64
           disable-animations: true
-          script: |
-            adb emu geo fix 0 0
-            python3 scripts/e2e_fixture.py &
-            FIXTURE_PID=$!
-            trap 'kill "$FIXTURE_PID"' EXIT
-            if ./gradlew :composeApp:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.placy.MapE2ETest,com.example.placy.PostCardUiTest; then
-              TEST_EXIT=0
-            else
-              TEST_EXIT=$?
-            fi
-            mkdir -p e2e-screenshots
-            adb pull /sdcard/Android/data/com.example.placy/files/e2e-screenshots/. e2e-screenshots/ || true
-            exit "$TEST_EXIT"
+          script: ./scripts/run_e2e.sh
       - name: Upload Android test results
         if: always()
         uses: actions/upload-artifact@v4
