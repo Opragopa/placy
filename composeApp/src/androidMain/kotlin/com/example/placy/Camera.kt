@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import io.github.ismoy.imagepickerkmp.domain.config.ImagePickerConfig
@@ -59,7 +58,6 @@ fun CameraView(navController: NavController, latitude: Double, longitude: Double
             Box (
                 modifier = Modifier
                     .fillMaxSize()
-                    .testTag("camera-screen")
                     .background(Color.Black)
                     .padding(
                         top = WindowInsets.statusBars

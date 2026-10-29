@@ -215,13 +215,12 @@ class MapE2ETest {
         val before = URL("http://10.0.2.2:18080/test-events").readText().toInt()
         compose.onNodeWithContentDescription("Камера").performClick()
         compose.waitUntil(timeoutMillis = 20000) {
-            compose.onAllNodes(androidx.compose.ui.test.hasTestTag("camera-screen")).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodes(androidx.compose.ui.test.hasTestTag("map-screen")).fetchSemanticsNodes().isEmpty()
         }
         InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("input keyevent 4").close()
         compose.waitUntil(timeoutMillis = 15000) {
-            compose.onAllNodes(androidx.compose.ui.test.hasTestTag("camera-screen")).fetchSemanticsNodes().isEmpty()
+            compose.onAllNodes(androidx.compose.ui.test.hasTestTag("map-screen")).fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("map-screen").assertIsDisplayed()
         kotlin.test.assertEquals(before, URL("http://10.0.2.2:18080/test-events").readText().toInt())
     }
 

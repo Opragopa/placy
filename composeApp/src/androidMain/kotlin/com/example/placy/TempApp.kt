@@ -119,6 +119,12 @@ fun TempMapScreen() {
         marks = apiService.getAllMarks()
     }
 
+    // Навигационный граф
+    NavHost(
+        navController = navController,
+        startDestination = "map"
+    ) {
+        composable("map") {
             // Основной экран с картой и кнопкой
             Box(modifier = Modifier.fillMaxSize()) {
                 // Карта
@@ -209,16 +215,16 @@ fun TempMapScreen() {
                         )
                     }
                 }
-                // Keep the native MapKit view mounted while the camera is shown.
-                NavHost(navController = navController, startDestination = "map") {
-                    composable("map") { }
-                    composable("camera") {
-                        CameraView(
-                            navController = navController, result!!.getOrNull()!!.coordinates.latitude,
-                            result!!.getOrNull()!!.coordinates.longitude)
-                    }
-                }
             }
+        }
+
+        composable("camera") {
+            // Экран камеры
+            CameraView(
+                navController = navController, result!!.getOrNull()!!.coordinates.latitude,
+                result!!.getOrNull()!!.coordinates.longitude)
+        }
+    }
 }
 
 @Composable
