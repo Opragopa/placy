@@ -74,4 +74,5 @@ jobs:
             composeApp/build/reports/androidTests/
             composeApp/build/outputs/androidTest-results/
             e2e-screenshots/
+            e2e-results/
           if-no-files-found: warn
