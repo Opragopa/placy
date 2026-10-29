@@ -103,7 +103,11 @@ android {
             buildConfigField(
                 type = "String",
                 name = element,
-                value = properties.getProperty(element, "\"\"")
+                value = properties.getProperty(element, when (element) {
+                    "SERVER_URL" -> "\"https://example.invalid\""
+                    "USERNAME" -> "\"test-user\""
+                    else -> "\"\""
+                })
             )
         }
 
