@@ -21,6 +21,7 @@ import androidx.navigation.NavController
 import io.github.ismoy.imagepickerkmp.domain.config.ImagePickerConfig
 import io.github.ismoy.imagepickerkmp.domain.extensions.loadBytes
 import io.github.ismoy.imagepickerkmp.presentation.ui.components.ImagePickerLauncher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -34,6 +35,7 @@ fun CameraView(navController: NavController, latitude: Double, longitude: Double
 
     val nextcloudClient = remember { NextcloudClient(NetworkModule.httpClient) }
     val api = remember { ApiService(NetworkModule.httpClient) }
+    val publisher = remember { PhotoPublisher(nextcloudClient::uploadImage, api::saveMark) }
 
     LaunchedEffect(Unit) {
         // Небольшая задержка перед открытием камеры
@@ -71,21 +73,18 @@ fun CameraView(navController: NavController, latitude: Double, longitude: Double
                         onPhotoCaptured = { result ->
                             cameraState = CameraState.Uploading
                             scope.launch {
-                                val photoId = UUID.randomUUID().toString()
-
-                                val bytes = result.loadBytes()
-
-                                val isUploaded = nextcloudClient.uploadImage(bytes, photoId)
-
-                                if (isUploaded) {
-                                    api.saveMark(
-                                        GeoMark(
-                                            photoUUID = photoId,
-                                            latitude = latitude,
-                                            longitude = longitude
-                                        )
-                                    )
-                                    navController.popBackStack()
+                                try {
+                                    val photoId = UUID.randomUUID().toString()
+                                    val bytes = result.loadBytes()
+                                    when (publisher.publish(bytes, photoId, latitude, longitude)) {
+                                        PublishResult.Success -> navController.popBackStack()
+                                        PublishResult.UploadFailed -> cameraState = CameraState.Error("Не удалось загрузить фотографию")
+                                        PublishResult.MetadataFailed -> cameraState = CameraState.Error("Не удалось сохранить публикацию")
+                                    }
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    cameraState = CameraState.Error("Не удалось обработать фотографию")
                                 }
                             }
                         },

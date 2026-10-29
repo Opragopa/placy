@@ -54,8 +54,8 @@ class HttpClientIntegrationTest {
         server.enqueue(MockResponse().setResponseCode(201))
         server.enqueue(MockResponse().setResponseCode(201))
         val bytes = byteArrayOf(1, 2, 3, 4)
-        assertTrue(photos.uploadImage(bytes, "photo-a"))
-        assertTrue(api.saveMark(GeoMark("photo-a", 59.9, 30.3)))
+        val publisher = PhotoPublisher(photos::uploadImage, api::saveMark)
+        assertEquals(PublishResult.Success, publisher.publish(bytes, "photo-a", 59.9, 30.3))
         val upload = request()
         assertEquals("PUT", upload.method)
         assertEquals("/remote.php/dav/files/test-user/photo-a.jpg", upload.path)
@@ -75,6 +75,23 @@ class HttpClientIntegrationTest {
         server.enqueue(MockResponse().setResponseCode(200).setBody(okio.Buffer().write(byteArrayOf(1, 2, 3))))
         assertContentEquals(byteArrayOf(1, 2, 3), photos.downloadImage("/photo-a.jpg"))
         assertEquals("/remote.php/dav/files/test-user/photo-a.jpg", request().path)
+    }
+
+    @Test fun failedUploadStopsPublicationBeforeMetadataRequest() = runTest {
+        server.enqueue(MockResponse().setResponseCode(503))
+        val publisher = PhotoPublisher(photos::uploadImage, api::saveMark)
+        assertEquals(PublishResult.UploadFailed, publisher.publish(byteArrayOf(1), "photo-a", 1.0, 2.0))
+        assertEquals("PUT", request().method)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test fun failedMetadataIsNotReportedAsPublicationSuccess() = runTest {
+        server.enqueue(MockResponse().setResponseCode(201))
+        server.enqueue(MockResponse().setResponseCode(503))
+        val publisher = PhotoPublisher(photos::uploadImage, api::saveMark)
+        assertEquals(PublishResult.MetadataFailed, publisher.publish(byteArrayOf(1), "photo-a", 1.0, 2.0))
+        assertEquals("PUT", request().method)
+        assertEquals("POST", request().method)
     }
 
     @Test fun uploadFailureIsReportedByClient() = runTest {
