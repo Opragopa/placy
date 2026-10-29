@@ -63,7 +63,7 @@ jobs:
             python3 scripts/e2e_fixture.py &
             FIXTURE_PID=$!
             trap 'kill "$FIXTURE_PID"' EXIT
-            ./gradlew :composeApp:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.placy.MapE2ETest
+            ./gradlew :composeApp:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.placy.MapE2ETest,com.example.placy.PostCardUiTest
       - name: Upload Android test results
         if: always()
         uses: actions/upload-artifact@v4

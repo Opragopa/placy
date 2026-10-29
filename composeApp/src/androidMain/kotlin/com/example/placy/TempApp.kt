@@ -99,6 +99,7 @@ fun TempMapScreen() {
     val apiService = remember { ApiService(NetworkModule.httpClient) }
     var selectedMark by remember { mutableStateOf<GeoMark?>(null) }
     var showSheet by remember { mutableStateOf(false) }
+    var showFullscreen by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val cameraPositionState = rememberCameraPositionState()
     val context = LocalPlatformContext.current
@@ -150,13 +151,22 @@ fun TempMapScreen() {
                     }
                 }
 
-                // Полноэкранное изображение (открывается при нажатии)
                 if (showSheet && selectedMark != null) {
-                    SimpleFullScreenImageViewer(
-                        imageUrl = "${BuildConfig.SERVER_URL}/remote.php/dav/files/${BuildConfig.USERNAME}/${selectedMark!!.photoUUID}.jpg",
-                        onDismiss = { showSheet = false },
-                        imageLoader = imageLoader
-                    )
+                    val imageUrl = "${BuildConfig.SERVER_URL}/remote.php/dav/files/${BuildConfig.USERNAME}/${selectedMark!!.photoUUID}.jpg"
+                    if (showFullscreen) {
+                        SimpleFullScreenImageViewer(
+                            imageUrl = imageUrl,
+                            onDismiss = { showFullscreen = false; showSheet = false },
+                            imageLoader = imageLoader
+                        )
+                    } else {
+                        PostCard(
+                            imageUrl = imageUrl,
+                            imageLoader = imageLoader,
+                            onOpenPhoto = { showFullscreen = true },
+                            onDismiss = { showSheet = false }
+                        )
+                    }
                 }
 
 // Кнопка камеры
@@ -178,14 +188,10 @@ fun TempMapScreen() {
                             .background(MaterialTheme.colorScheme.primary),
                         onClick = {
                             scope.launch {
-                                result = geolocator.current(Priority.HighAccuracy)
-                            }
-                            result?.let {
-                                when (it) {
-                                    is GeolocatorResult.Success -> {
-                                        navController.navigate("camera")
-                                    }
-                                    else -> {}
+                                val location = geolocator.current(Priority.HighAccuracy)
+                                result = location
+                                if (location is GeolocatorResult.Success) {
+                                    navController.navigate("camera")
                                 }
                             }
                         }
@@ -211,6 +217,33 @@ fun TempMapScreen() {
 }
 
 @Composable
+fun PostCard(
+    imageUrl: String,
+    imageLoader: ImageLoader,
+    onOpenPhoto: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(12.dp)
+                .testTag("post-card")
+        ) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = "Фотография публикации",
+                imageLoader = imageLoader,
+                modifier = Modifier.fillMaxWidth().height(240.dp).clickable(onClick = onOpenPhoto),
+                contentScale = ContentScale.Fit
+            )
+        }
+    }
+}
+
+@Composable
 fun SimpleFullScreenImageViewer(
     imageUrl: String,
     onDismiss: () -> Unit,
@@ -229,6 +262,7 @@ fun SimpleFullScreenImageViewer(
                 .fillMaxSize()
                 .background(Color.Black)
                 .clickable(onClick = onDismiss)
+                .testTag("fullscreen-photo")
         ) {
 //            Image(
 //                painter = rememberAsyncImagePainter(
@@ -245,7 +279,8 @@ fun SimpleFullScreenImageViewer(
                 model = imageUrl,
                 contentDescription = "My Photo from Nextcloud",
                 imageLoader = imageLoader,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
             )
         }
     }
