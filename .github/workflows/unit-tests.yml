@@ -19,6 +19,18 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Run unit tests
         run: ./gradlew :composeApp:unitBranchCoverage
+      - name: Preserve unit test results
+        if: always()
+        run: |
+          mkdir -p test-evidence/unit
+          cp -R composeApp/build/test-results/testDebugUnitTest test-evidence/unit/ 2>/dev/null || true
+      - name: Run HTTP integration checks
+        run: ./gradlew :composeApp:testDebugUnitTest -PonlyIntegration=true
+      - name: Preserve integration test results
+        if: always()
+        run: |
+          mkdir -p test-evidence/integration
+          cp -R composeApp/build/test-results/testDebugUnitTest test-evidence/integration/ 2>/dev/null || true
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -26,6 +38,6 @@ jobs:
           name: android-unit-results
           path: |
             composeApp/build/reports/tests/
-            composeApp/build/test-results/
+            test-evidence/
             composeApp/build/reports/jacoco/
           if-no-files-found: warn
