@@ -64,6 +64,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: |
+            adb emu geo fix 0 0
             python3 scripts/e2e_fixture.py &
             FIXTURE_PID=$!
             trap 'kill "$FIXTURE_PID"' EXIT
