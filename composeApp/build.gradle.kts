@@ -67,6 +67,7 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.client.mock)
+            implementation("com.squareup.okhttp3:mockwebserver:4.12.0")
         }
 
         commonTest.dependencies {

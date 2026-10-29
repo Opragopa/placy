@@ -10,9 +10,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 
-class NextcloudClient(private val client: HttpClient) {
-    private val baseUrl = BuildConfig.SERVER_URL
-    private val user = BuildConfig.USERNAME
+class NextcloudClient(
+    private val client: HttpClient,
+    private val baseUrl: String = BuildConfig.SERVER_URL,
+    private val user: String = BuildConfig.USERNAME,
+) {
 
     suspend fun uploadImage(imageData: ByteArray, filename: String): Boolean {
         val url = "$baseUrl/remote.php/dav/files/$user/$filename.jpg"

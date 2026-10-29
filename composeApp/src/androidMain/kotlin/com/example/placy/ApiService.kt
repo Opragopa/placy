@@ -11,8 +11,10 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 
-class ApiService(private val client: HttpClient) {
-    private val baseUrl = "http://188.242.76.219:57492"
+class ApiService(
+    private val client: HttpClient,
+    private val baseUrl: String = "http://188.242.76.219:57492",
+) {
 
     suspend fun getAllMarks(): List<GeoMark> {
         return try {
