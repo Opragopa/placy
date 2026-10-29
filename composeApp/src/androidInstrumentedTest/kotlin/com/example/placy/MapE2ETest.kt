@@ -3,6 +3,9 @@ package com.example.placy
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.os.SystemClock
+import android.graphics.Bitmap
+import java.io.File
+import java.io.FileOutputStream
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.performClick
@@ -42,8 +45,20 @@ class MapE2ETest {
         compose.onNodeWithTag("post-card").assertIsDisplayed()
     }
 
+    private fun saveScreenshot(name: String) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val directory = File(requireNotNull(instrumentation.targetContext.getExternalFilesDir(null)), "e2e-screenshots")
+        check(directory.isDirectory || directory.mkdirs())
+        val bitmap = requireNotNull(instrumentation.uiAutomation.takeScreenshot())
+        try {
+            FileOutputStream(File(directory, "$name.png")).use { stream ->
+                check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream))
+            }
+        } finally { bitmap.recycle() }
+    }
+
     // E2E-08 / F_Post_03: selecting the map marker opens a card.
-    @Test fun markerOpensPublicationCard() = isolatedLaunch { openFixtureCard() }
+    @Test fun markerOpensPublicationCard() = isolatedLaunch { openFixtureCard(); saveScreenshot("card") }
 
     // E2E-09 / F_Post_04: selecting the photo opens the fullscreen viewer.
     @Test fun cardPhotoOpensFullscreen() = isolatedLaunch {
@@ -123,6 +138,7 @@ class MapE2ETest {
     // E2E-01 / F_Map_01: application starts on the map.
     @Test fun mapIsDisplayedAtLaunch() = isolatedLaunch {
         compose.onNodeWithTag("map-screen").assertIsDisplayed()
+        saveScreenshot("map")
     }
 
     // A second launch in the same process must not reinitialize MapKit with a new key.
