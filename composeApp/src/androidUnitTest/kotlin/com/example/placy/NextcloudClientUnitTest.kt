@@ -14,7 +14,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class NextcloudClientTest {
+class NextcloudClientUnitTest {
     @Test
     fun testUploadImageSuccess() = runTest {
         val client = HttpClient(MockEngine) {
