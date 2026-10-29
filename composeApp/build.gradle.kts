@@ -62,6 +62,11 @@ kotlin {
             implementation("io.github.ismoy:imagepickerkmp:1.0.28-beta3")
         }
 
+        androidInstrumentedTest.dependencies {
+            implementation(libs.androidx.ui.test.junit4)
+            implementation(libs.androidx.testExt.junit)
+        }
+
         androidUnitTest.dependencies {
             implementation(libs.junit)
             implementation(libs.kotlin.test)
@@ -95,6 +100,7 @@ android {
 
         val list = listOf(
             "MAPKIT_API_KEY",
+            "API_URL",
             "SERVER_URL",
             "USERNAME",
             "PASSWORD",
@@ -105,6 +111,7 @@ android {
                 type = "String",
                 name = element,
                 value = properties.getProperty(element, when (element) {
+                    "API_URL" -> "\"http://188.242.76.219:57492\""
                     "SERVER_URL" -> "\"https://example.invalid\""
                     "USERNAME" -> "\"test-user\""
                     else -> "\"\""
@@ -162,6 +169,7 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.0")
     implementation(libs.kotlin.test)
     implementation(libs.junit)
     implementation(libs.androidx.runner)
