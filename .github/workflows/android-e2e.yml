@@ -1,8 +1,26 @@
 name: Android E2E smoke
 on:
   workflow_dispatch:
+  pull_request:
 jobs:
+  check-key:
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.key.outputs.available }}
+    steps:
+      - id: key
+        env:
+          MAPKIT_TEST_KEY: ${{ secrets.MAPKIT_TEST_KEY }}
+        run: |
+          if [ -n "$MAPKIT_TEST_KEY" ]; then
+            echo 'available=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            echo 'MAPKIT_TEST_KEY is missing; emulator tests were not run.' >> "$GITHUB_STEP_SUMMARY"
+          fi
   e2e:
+    needs: check-key
+    if: needs.check-key.outputs.available == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
