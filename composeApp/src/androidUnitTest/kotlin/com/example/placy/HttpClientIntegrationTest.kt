@@ -89,6 +89,30 @@ class HttpClientIntegrationTest {
         assertEquals("GET", request().method)
     }
 
+    @Test fun emptyMapResponseHasNoMarks() = runTest {
+        server.enqueue(json("[]"))
+        assertTrue(api.getAllMarks().isEmpty())
+        assertEquals("/geomarks", request().path)
+    }
+
+    @Test fun metadataRejectionIsReported() = runTest {
+        server.enqueue(MockResponse().setResponseCode(409))
+        assertFalse(api.saveMark(GeoMark("duplicate", 59.9, 30.3)))
+        assertEquals("POST", request().method)
+    }
+
+    @Test fun photoUploadRejectsUnauthorizedResponse() = runTest {
+        server.enqueue(MockResponse().setResponseCode(401))
+        assertFalse(photos.uploadImage(byteArrayOf(1, 2), "photo-a"))
+        assertEquals("/remote.php/dav/files/test-user/photo-a.jpg", request().path)
+    }
+
+    @Test fun invalidMetadataCannotBeDeserializedAsMark() = runTest {
+        server.enqueue(json("""[{"photoUUID":"a","latitude":59.9}]"""))
+        assertTrue(api.getAllMarks().isEmpty())
+        assertEquals("GET", request().method)
+    }
+
     @Test fun malformedMarksResponseIsReportedAsEmptyByCurrentClient() = runTest {
         server.enqueue(json("invalid"))
         assertTrue(api.getAllMarks().isEmpty())
