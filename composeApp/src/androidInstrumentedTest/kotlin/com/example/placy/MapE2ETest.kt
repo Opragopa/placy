@@ -125,6 +125,12 @@ class MapE2ETest {
         compose.onNodeWithTag("map-screen").assertIsDisplayed()
     }
 
+    // A second launch in the same process must not reinitialize MapKit with a new key.
+    @Test fun reopeningActivityDoesNotCrashMap() {
+        isolatedLaunch { compose.onNodeWithTag("map-screen").assertIsDisplayed() }
+        isolatedLaunch { compose.onNodeWithTag("map-screen").assertIsDisplayed() }
+    }
+
     // E2E-07 / F_Map_06: the camera control is visible from the map.
     @Test fun cameraControlIsDisplayedOnMap() = isolatedLaunch {
         compose.onNodeWithContentDescription("Камера").assertIsDisplayed()
