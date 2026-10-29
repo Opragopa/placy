@@ -180,7 +180,9 @@ class MapE2ETest {
         compose.waitUntil(timeoutMillis = 15000) { bounds = screenshotRedBounds(); bounds != null }
         val map = compose.onNodeWithTag("map-screen").fetchSemanticsNode().boundsInRoot
         val b = requireNotNull(bounds)
-        assertTrue(b[0] <= map.center.x && b[2] >= map.center.x)
+        // The pin is rotated; its red head need not cross the exact coordinate at its tip.
+        assertTrue(b[0] <= map.center.x + map.width * 0.15f)
+        assertTrue(b[2] >= map.center.x - map.width * 0.15f)
         assertTrue(b[1] < map.center.y && b[3] <= map.center.y + 8f)
     }
 
