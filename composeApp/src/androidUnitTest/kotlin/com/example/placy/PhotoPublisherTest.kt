@@ -20,6 +20,12 @@ class PhotoPublisherTest {
         assertEquals("photo-1", uploadedId)
         assertEquals(GeoMark("photo-1", 59.9, 30.3), saved)
     }
+    @Test fun invalidCoordinatesStopBeforeUploading() = runTest {
+        var uploaded = false
+        val publisher = PhotoPublisher({ _, _ -> uploaded = true; true }, { true })
+        assertEquals(PublishResult.InvalidCoordinates, publisher.publish(byteArrayOf(1), "a", 91.0, 2.0))
+        assertFalse(uploaded)
+    }
     @Test fun uploadFailureDoesNotSaveMetadata() = runTest {
         var saved = false
         val publisher = PhotoPublisher({ _, _ -> false }, { saved = true; true })

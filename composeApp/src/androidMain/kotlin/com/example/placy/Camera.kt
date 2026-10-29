@@ -78,6 +78,7 @@ fun CameraView(navController: NavController, latitude: Double, longitude: Double
                                     val bytes = result.loadBytes()
                                     when (publisher.publish(bytes, photoId, latitude, longitude)) {
                                         PublishResult.Success -> navController.popBackStack()
+                                        PublishResult.InvalidCoordinates -> cameraState = CameraState.Error("Некорректные координаты")
                                         PublishResult.UploadFailed -> cameraState = CameraState.Error("Не удалось загрузить фотографию")
                                         PublishResult.MetadataFailed -> cameraState = CameraState.Error("Не удалось сохранить публикацию")
                                     }

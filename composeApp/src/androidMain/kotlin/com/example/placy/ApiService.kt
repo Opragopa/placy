@@ -18,7 +18,7 @@ class ApiService(
 
     suspend fun getAllMarks(): List<GeoMark> {
         return try {
-            client.get("$baseUrl/geomarks").body()
+            client.get("$baseUrl/geomarks").body<List<GeoMark>>().filter { it.hasValidCoordinates() }
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
@@ -26,6 +26,7 @@ class ApiService(
     }
 
     suspend fun saveMark(mark: GeoMark): Boolean {
+        if (!mark.hasValidCoordinates()) return false
         return try {
             val response = client.post("$baseUrl/geomarks") {
                 contentType(ContentType.Application.Json)

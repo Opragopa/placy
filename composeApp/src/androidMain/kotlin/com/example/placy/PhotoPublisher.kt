@@ -6,9 +6,11 @@ internal class PhotoPublisher(
     private val save: suspend (GeoMark) -> Boolean,
 ) {
     suspend fun publish(bytes: ByteArray, photoId: String, latitude: Double, longitude: Double): PublishResult {
+        val mark = GeoMark(photoId, latitude, longitude)
+        if (!mark.hasValidCoordinates()) return PublishResult.InvalidCoordinates
         if (!upload(bytes, photoId)) return PublishResult.UploadFailed
-        return if (save(GeoMark(photoId, latitude, longitude))) PublishResult.Success else PublishResult.MetadataFailed
+        return if (save(mark)) PublishResult.Success else PublishResult.MetadataFailed
     }
 }
 
-internal enum class PublishResult { Success, UploadFailed, MetadataFailed }
+internal enum class PublishResult { Success, InvalidCoordinates, UploadFailed, MetadataFailed }
