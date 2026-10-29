@@ -64,7 +64,6 @@ kotlin {
 
         androidInstrumentedTest.dependencies {
             implementation(libs.androidx.ui.test.junit4)
-            implementation(libs.androidx.testExt.junit)
         }
 
         androidUnitTest.dependencies {
