@@ -85,7 +85,10 @@ class MapE2ETest {
     // E2E-11 / F_Post_06: Android back dismisses the card.
     @Test fun systemBackClosesCard() = isolatedLaunch {
         openFixtureCard()
-        InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("input keyevent 4").close()
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+        compose.waitUntil(timeoutMillis = 10000) {
+            compose.onAllNodes(androidx.compose.ui.test.hasTestTag("post-card")).fetchSemanticsNodes().isEmpty()
+        }
         compose.onNodeWithTag("post-card").assertDoesNotExist()
         compose.onNodeWithTag("map-screen").assertIsDisplayed()
     }

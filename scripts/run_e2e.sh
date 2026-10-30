@@ -18,6 +18,7 @@ else
   test_exit=1
 fi
 cp -R composeApp/build/outputs/androidTest-results/. e2e-results/map/ 2>/dev/null || true
+adb logcat -c
 if ./gradlew :composeApp:connectedDebugAndroidTest \
   '-Pandroid.testInstrumentationRunnerArguments.class=com.example.placy.MapE2ETest#cancellingCameraReturnsWithoutPublishing'; then
   :
@@ -25,6 +26,7 @@ else
   test_exit=1
 fi
 cp -R composeApp/build/outputs/androidTest-results/. e2e-results/camera/ 2>/dev/null || true
+adb logcat -d -v threadtime > e2e-results/camera/logcat.txt
 
 mkdir -p e2e-screenshots
 for name in map card fullscreen before-marker-tap; do
