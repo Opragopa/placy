@@ -147,6 +147,11 @@ class MapE2ETest {
             compose.onAllNodes(androidx.compose.ui.test.hasContentDescription("Карта, публикаций: 1"))
                 .fetchSemanticsNodes().isNotEmpty()
         }
+        val initial = cameraSnapshot()
+        compose.onNodeWithTag("map-screen").performTouchInput {
+            swipe(Offset(center.x, center.y), Offset(center.x + 35f, center.y + 20f), 500)
+        }
+        compose.waitUntil(timeoutMillis = 10000) { cameraSnapshot() != initial }
         val before = cameraSnapshot()
         openFixtureCard()
         compose.onNodeWithContentDescription("Фотография публикации").performClick()
