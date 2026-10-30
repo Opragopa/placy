@@ -220,9 +220,11 @@ fun TempMapScreen() {
 
         composable("camera") {
             // Экран камеры
-            CameraView(
-                navController = navController, result!!.getOrNull()!!.coordinates.latitude,
-                result!!.getOrNull()!!.coordinates.longitude)
+            Box(modifier = Modifier.fillMaxSize().semantics { contentDescription = "Экран камеры" }) {
+                CameraView(
+                    navController = navController, result!!.getOrNull()!!.coordinates.latitude,
+                    result!!.getOrNull()!!.coordinates.longitude)
+            }
         }
     }
 }

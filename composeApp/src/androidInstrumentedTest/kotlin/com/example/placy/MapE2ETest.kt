@@ -15,7 +15,6 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.pinch
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import java.net.URL
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -216,20 +215,6 @@ class MapE2ETest {
         compose.onNodeWithTag("map-screen").assertIsDisplayed()
         openFixtureCard()
         compose.onNodeWithContentDescription("Фотография публикации").assertIsDisplayed()
-    }
-
-    // E2E-14 / F_Post_07: cancelling the actual capture flow creates no server-side writes.
-    @Test fun cancellingCameraReturnsWithoutPublishing() = isolatedLaunch {
-        val before = URL("http://10.0.2.2:18080/test-events").readText().toInt()
-        compose.onNodeWithContentDescription("Камера").performClick()
-        compose.waitUntil(timeoutMillis = 20000) {
-            compose.onAllNodes(androidx.compose.ui.test.hasTestTag("map-screen")).fetchSemanticsNodes().isEmpty()
-        }
-        InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("input keyevent 4").close()
-        compose.waitUntil(timeoutMillis = 15000) {
-            compose.onAllNodes(androidx.compose.ui.test.hasTestTag("map-screen")).fetchSemanticsNodes().isNotEmpty()
-        }
-        kotlin.test.assertEquals(before, URL("http://10.0.2.2:18080/test-events").readText().toInt())
     }
 
     // E2E-01 / F_Map_01: application starts on the map.

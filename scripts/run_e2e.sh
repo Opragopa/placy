@@ -11,8 +11,7 @@ done
 test_exit=0
 mkdir -p e2e-results/map e2e-results/camera
 if ./gradlew :composeApp:connectedDebugAndroidTest \
-  -Pandroid.testInstrumentationRunnerArguments.class=com.example.placy.MapE2ETest,com.example.placy.PostCardUiTest \
-  '-Pandroid.testInstrumentationRunnerArguments.notClass=com.example.placy.MapE2ETest#cancellingCameraReturnsWithoutPublishing'; then
+  -Pandroid.testInstrumentationRunnerArguments.class=com.example.placy.MapE2ETest,com.example.placy.PostCardUiTest; then
   :
 else
   test_exit=1
@@ -20,7 +19,7 @@ fi
 cp -R composeApp/build/outputs/androidTest-results/. e2e-results/map/ 2>/dev/null || true
 adb logcat -c
 if ./gradlew :composeApp:connectedDebugAndroidTest \
-  '-Pandroid.testInstrumentationRunnerArguments.class=com.example.placy.MapE2ETest#cancellingCameraReturnsWithoutPublishing'; then
+  '-Pandroid.testInstrumentationRunnerArguments.class=com.example.placy.CameraE2ETest'; then
   :
 else
   test_exit=1

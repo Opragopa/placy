@@ -64,6 +64,7 @@ kotlin {
 
         androidInstrumentedTest.dependencies {
             implementation(libs.androidx.ui.test.junit4)
+            implementation("androidx.test.uiautomator:uiautomator:2.3.0")
         }
 
         androidUnitTest.dependencies {
