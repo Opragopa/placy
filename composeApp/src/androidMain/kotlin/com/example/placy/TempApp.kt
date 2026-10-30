@@ -44,6 +44,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -81,6 +86,11 @@ import ru.sulgik.mapkit.map.RotationType
 import kotlin.math.max
 import kotlin.math.min
 
+val MapCameraSnapshotKey = SemanticsPropertyKey<String>("MapCameraSnapshot")
+val MapZoomKey = SemanticsPropertyKey<Float>("MapZoom")
+var SemanticsPropertyReceiver.mapCameraSnapshot by MapCameraSnapshotKey
+var SemanticsPropertyReceiver.mapZoom by MapZoomKey
+
 @Composable
 @Preview
 fun TempApp() {
@@ -96,10 +106,9 @@ fun TempMapScreen() {
     var marks by remember { mutableStateOf<List<GeoMark>>(emptyList()) }
     var result by remember { mutableStateOf<GeolocatorResult?>(null) }
     val apiService = remember { ApiService(NetworkModule.httpClient) }
-    var selectedMark by remember { mutableStateOf<GeoMark?>(null) }
-    var showSheet by remember { mutableStateOf(false) }
+    var postViewer by remember { mutableStateOf<PostViewerState>(PostViewerState.Hidden) }
     val scope = rememberCoroutineScope()
-    val cameraPositionState = rememberCameraPositionState()
+    val cameraPositionState = rememberCameraPositionState { position = position.copy(zoom = 12f) }
     val context = LocalPlatformContext.current
     val imageLoader = remember {
         getNextcloudImageLoader(context)
@@ -120,7 +129,7 @@ fun TempMapScreen() {
             Box(modifier = Modifier.fillMaxSize()) {
                 // Карта
                 YandexMap(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().testTag("map-screen").semantics { contentDescription = "Карта, публикаций: ${marks.size}"; mapCameraSnapshot = cameraPositionState.position.toString(); mapZoom = cameraPositionState.position.zoom },
                     cameraPositionState = cameraPositionState
                 ) {
                     marks.forEach { mark ->
@@ -141,21 +150,34 @@ fun TempMapScreen() {
                                 zIndex = 1f
                             ),
                             onTap = {
-                                selectedMark = mark
-                                showSheet = true
+                                postViewer = reducePostViewer(postViewer, PostViewerAction.Select(mark))
                                 true
                             }
                         )
                     }
                 }
 
-                // Полноэкранное изображение (открывается при нажатии)
-                if (showSheet && selectedMark != null) {
-                    SimpleFullScreenImageViewer(
-                        imageUrl = "${BuildConfig.SERVER_URL}/remote.php/dav/files/${BuildConfig.USERNAME}/${selectedMark!!.photoUUID}.jpg",
-                        onDismiss = { showSheet = false },
-                        imageLoader = imageLoader
-                    )
+                val visibleMark = when (val state = postViewer) {
+                    is PostViewerState.Card -> state.mark
+                    is PostViewerState.Photo -> state.mark
+                    PostViewerState.Hidden -> null
+                }
+                if (visibleMark != null) {
+                    val imageUrl = "${BuildConfig.SERVER_URL}/remote.php/dav/files/${BuildConfig.USERNAME}/${visibleMark.photoUUID}.jpg"
+                    when (postViewer) {
+                        is PostViewerState.Photo -> SimpleFullScreenImageViewer(
+                            imageUrl = imageUrl,
+                            onDismiss = { postViewer = reducePostViewer(postViewer, PostViewerAction.Dismiss) },
+                            imageLoader = imageLoader
+                        )
+                        is PostViewerState.Card -> PostCard(
+                            imageUrl = imageUrl,
+                            imageLoader = imageLoader,
+                            onOpenPhoto = { postViewer = reducePostViewer(postViewer, PostViewerAction.OpenPhoto) },
+                            onDismiss = { postViewer = reducePostViewer(postViewer, PostViewerAction.Dismiss) }
+                        )
+                        PostViewerState.Hidden -> Unit
+                    }
                 }
 
 // Кнопка камеры
@@ -177,14 +199,10 @@ fun TempMapScreen() {
                             .background(MaterialTheme.colorScheme.primary),
                         onClick = {
                             scope.launch {
-                                result = geolocator.current(Priority.HighAccuracy)
-                            }
-                            result?.let {
-                                when (it) {
-                                    is GeolocatorResult.Success -> {
-                                        navController.navigate("camera")
-                                    }
-                                    else -> {}
+                                val location = geolocator.current(Priority.HighAccuracy)
+                                result = location
+                                if (location is GeolocatorResult.Success) {
+                                    navController.navigate("camera")
                                 }
                             }
                         }
@@ -202,9 +220,38 @@ fun TempMapScreen() {
 
         composable("camera") {
             // Экран камеры
-            CameraView(
-                navController = navController, result!!.getOrNull()!!.coordinates.latitude,
-                result!!.getOrNull()!!.coordinates.longitude)
+            Box(modifier = Modifier.fillMaxSize().semantics { contentDescription = "Экран камеры" }) {
+                CameraView(
+                    navController = navController, result!!.getOrNull()!!.coordinates.latitude,
+                    result!!.getOrNull()!!.coordinates.longitude)
+            }
+        }
+    }
+}
+
+@Composable
+fun PostCard(
+    imageUrl: String,
+    imageLoader: ImageLoader,
+    onOpenPhoto: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(12.dp)
+                .testTag("post-card")
+        ) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = "Фотография публикации",
+                imageLoader = imageLoader,
+                modifier = Modifier.fillMaxWidth().height(240.dp).clickable(onClick = onOpenPhoto),
+                contentScale = ContentScale.Fit
+            )
         }
     }
 }
@@ -228,6 +275,7 @@ fun SimpleFullScreenImageViewer(
                 .fillMaxSize()
                 .background(Color.Black)
                 .clickable(onClick = onDismiss)
+                .testTag("fullscreen-photo")
         ) {
 //            Image(
 //                painter = rememberAsyncImagePainter(
@@ -244,7 +292,8 @@ fun SimpleFullScreenImageViewer(
                 model = imageUrl,
                 contentDescription = "My Photo from Nextcloud",
                 imageLoader = imageLoader,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
             )
         }
     }

@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlin.serialization)
+    jacoco
 }
 
 kotlin {
@@ -61,6 +62,19 @@ kotlin {
             implementation("io.github.ismoy:imagepickerkmp:1.0.28-beta3")
         }
 
+        androidInstrumentedTest.dependencies {
+            implementation(libs.androidx.ui.test.junit4)
+            implementation("androidx.test.uiautomator:uiautomator:2.3.0")
+        }
+
+        androidUnitTest.dependencies {
+            implementation(libs.junit)
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.client.mock)
+            implementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+        }
+
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
@@ -80,10 +94,13 @@ android {
 
         val keystoreFile = project.rootProject.file("apikey.properties")
         val properties = Properties()
-        properties.load(keystoreFile.inputStream())
+        if (keystoreFile.exists()) {
+            keystoreFile.inputStream().use(properties::load)
+        }
 
         val list = listOf(
             "MAPKIT_API_KEY",
+            "API_URL",
             "SERVER_URL",
             "USERNAME",
             "PASSWORD",
@@ -93,7 +110,12 @@ android {
             buildConfigField(
                 type = "String",
                 name = element,
-                value = properties.getProperty(element)
+                value = properties.getProperty(element, when (element) {
+                    "API_URL" -> "\"http://188.242.76.219:57492\""
+                    "SERVER_URL" -> "\"https://example.invalid\""
+                    "USERNAME" -> "\"test-user\""
+                    else -> "\"\""
+                })
             )
         }
 
@@ -147,6 +169,7 @@ android {
 
 dependencies {
     debugImplementation(compose.uiTooling)
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.0")
     implementation(libs.kotlin.test)
     implementation(libs.junit)
     implementation(libs.androidx.runner)
@@ -167,4 +190,29 @@ dependencies {
 
     // Compose UI тестирование (если нужно)
     implementation(libs.androidx.ui.test.junit4)
+}
+// Branch coverage for the Android debug unit tests; only generated resource and configuration classes are excluded.
+tasks.register<JacocoReport>("unitBranchCoverage") {
+    dependsOn("testDebugUnitTest")
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    classDirectories.setFrom(fileTree(layout.buildDirectory.dir("tmp/kotlin-classes/debug")) {
+        exclude("**/R.class", "**/R\$*.class", "**/BuildConfig.*")
+    })
+    sourceDirectories.setFrom(files("src/androidMain/kotlin", "src/commonMain/kotlin"))
+    executionData.setFrom(fileTree(layout.buildDirectory) {
+        include("jacoco/testDebugUnitTest.exec", "outputs/unit_test_code_coverage/debugUnitTest/*.exec")
+    })
+}
+
+// Run the HTTP integration suite separately from the unit coverage measurement.
+tasks.withType<Test>().configureEach {
+    if (name != "testDebugUnitTest") return@configureEach
+    if (providers.gradleProperty("onlyIntegration").isPresent) {
+        filter.includeTestsMatching("*HttpClientIntegrationTest")
+    } else {
+        filter.excludeTestsMatching("*HttpClientIntegrationTest")
+    }
 }

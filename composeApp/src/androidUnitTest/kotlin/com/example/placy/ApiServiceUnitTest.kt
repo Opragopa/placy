@@ -18,7 +18,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class ApiServiceTest {
+class ApiServiceUnitTest {
     private fun createMockHttpClient(responseData: String, statusCode: HttpStatusCode): HttpClient {
         return HttpClient(MockEngine) {
             engine {
