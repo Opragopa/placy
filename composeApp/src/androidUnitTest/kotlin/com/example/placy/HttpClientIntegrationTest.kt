@@ -40,6 +40,7 @@ class HttpClientIntegrationTest {
     private fun request() = assertNotNull(server.takeRequest(5, TimeUnit.SECONDS))
 
     // INT-01, F_Map_04: transport/deserialization only; visible-area filtering is absent.
+    // INT-01 in docs/testing/TEST_PLANS.md.
     @Test fun loadsMarksOverHttp() = runTest {
         server.enqueue(json("""[{"photoUUID":"photo-a","latitude":59.9,"longitude":30.3}]"""))
         assertEquals(listOf(GeoMark("photo-a", 59.9, 30.3)), api.getAllMarks())
@@ -50,6 +51,7 @@ class HttpClientIntegrationTest {
 
     // INT-05, F_Post_08: verify the two HTTP client contracts and shared photo identifier.
     // This does not exercise CameraView or establish end-to-end publication.
+    // INT-05 in docs/testing/TEST_PLANS.md.
     @Test fun imageAndMetadataUseSameIdentifier() = runTest {
         server.enqueue(MockResponse().setResponseCode(201))
         server.enqueue(MockResponse().setResponseCode(201))
@@ -70,13 +72,15 @@ class HttpClientIntegrationTest {
     }
 
     // F_Post_04: the image client can retrieve the exact bytes needed by the viewer;
-    // rendering and the missing publication card are not covered.
+    // rendering and the publication card are not covered by this test.
+    // INT-03 in docs/testing/TEST_PLANS.md.
     @Test fun downloadsPhotoOverHttp() = runTest {
         server.enqueue(MockResponse().setResponseCode(200).setBody(okio.Buffer().write(byteArrayOf(1, 2, 3))))
         assertContentEquals(byteArrayOf(1, 2, 3), photos.downloadImage("/photo-a.jpg"))
         assertEquals("/remote.php/dav/files/test-user/photo-a.jpg", request().path)
     }
 
+    // INT-06 in docs/testing/TEST_PLANS.md.
     @Test fun failedUploadStopsPublicationBeforeMetadataRequest() = runTest {
         server.enqueue(MockResponse().setResponseCode(503))
         val publisher = PhotoPublisher(photos::uploadImage, api::saveMark)
@@ -85,6 +89,7 @@ class HttpClientIntegrationTest {
         assertEquals(1, server.requestCount)
     }
 
+    // INT-07 in docs/testing/TEST_PLANS.md.
     @Test fun failedMetadataIsNotReportedAsPublicationSuccess() = runTest {
         server.enqueue(MockResponse().setResponseCode(201))
         server.enqueue(MockResponse().setResponseCode(503))
@@ -100,30 +105,35 @@ class HttpClientIntegrationTest {
         assertEquals("PUT", request().method)
     }
 
+    // INT-04 in docs/testing/TEST_PLANS.md.
     @Test fun missingPhotoIsReportedByClient() = runTest {
         server.enqueue(MockResponse().setResponseCode(404))
         assertEquals(null, photos.downloadImage("missing.jpg"))
         assertEquals("GET", request().method)
     }
 
+    // INT-02 in docs/testing/TEST_PLANS.md.
     @Test fun emptyMapResponseHasNoMarks() = runTest {
         server.enqueue(json("[]"))
         assertTrue(api.getAllMarks().isEmpty())
         assertEquals("/geomarks", request().path)
     }
 
+    // INT-10 in docs/testing/TEST_PLANS.md.
     @Test fun metadataRejectionIsReported() = runTest {
         server.enqueue(MockResponse().setResponseCode(409))
         assertFalse(api.saveMark(GeoMark("duplicate", 59.9, 30.3)))
         assertEquals("POST", request().method)
     }
 
+    // INT-08 in docs/testing/TEST_PLANS.md.
     @Test fun photoUploadRejectsUnauthorizedResponse() = runTest {
         server.enqueue(MockResponse().setResponseCode(401))
         assertFalse(photos.uploadImage(byteArrayOf(1, 2), "photo-a"))
         assertEquals("/remote.php/dav/files/test-user/photo-a.jpg", request().path)
     }
 
+    // INT-09 in docs/testing/TEST_PLANS.md.
     @Test fun invalidMetadataCannotBeDeserializedAsMark() = runTest {
         server.enqueue(json("""[{"photoUUID":"a","latitude":59.9}]"""))
         assertTrue(api.getAllMarks().isEmpty())
