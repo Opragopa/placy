@@ -1,4 +1,7 @@
-package com.example.placy
+package com.example.placy.tests.photos
+
+import com.example.placy.PhotoPublisher
+import com.example.placy.PublishResult
 
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
