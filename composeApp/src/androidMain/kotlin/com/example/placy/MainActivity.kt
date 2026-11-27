@@ -10,9 +10,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        MapKit.setApiKey(BuildConfig.MAPKIT_API_KEY)
-        MapKit.initialize(this)
-
         setContent {
             TempApp()
         }

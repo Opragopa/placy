@@ -1,4 +1,6 @@
-package com.example.placy
+package com.example.placy.tests.photos
+
+import com.example.placy.NextcloudClient
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -14,7 +16,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class NextcloudClientTest {
+class NextcloudClientUnitTest {
     @Test
     fun testUploadImageSuccess() = runTest {
         val client = HttpClient(MockEngine) {
@@ -138,13 +140,14 @@ class NextcloudClientTest {
             }
         }
 
-        val nextcloudClient = NextcloudClient(client)
+        try {
+            val nextcloudClient = NextcloudClient(client, "https://example.invalid", "alice")
+            val bytes = nextcloudClient.downloadImage(remotePath = "/test.jpg")
 
-        nextcloudClient.downloadImage(remotePath = "/test.jpg")
-
-        println("Captured URL: $capturedUrl")
-        assertTrue(capturedUrl.contains("/remote.php/dav/files/"))
-        assertFalse(capturedUrl.contains("/remote.php/dav/files//"))
-
+            assertEquals("https://example.invalid/remote.php/dav/files/alice/test.jpg", capturedUrl)
+            assertEquals("test", bytes?.decodeToString())
+        } finally {
+            client.close()
+        }
     }
 }

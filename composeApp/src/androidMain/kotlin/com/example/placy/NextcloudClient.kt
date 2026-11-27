@@ -1,5 +1,6 @@
 package com.example.placy
 
+import kotlinx.coroutines.CancellationException
 import io.ktor.client.HttpClient
 import io.ktor.client.request.put
 import io.ktor.client.request.get
@@ -10,9 +11,11 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 
-class NextcloudClient(private val client: HttpClient) {
-    private val baseUrl = BuildConfig.SERVER_URL
-    private val user = BuildConfig.USERNAME
+class NextcloudClient(
+    private val client: HttpClient,
+    private val baseUrl: String = BuildConfig.SERVER_URL,
+    private val user: String = BuildConfig.USERNAME,
+) {
 
     suspend fun uploadImage(imageData: ByteArray, filename: String): Boolean {
         val url = "$baseUrl/remote.php/dav/files/$user/$filename.jpg"
@@ -24,6 +27,8 @@ class NextcloudClient(private val client: HttpClient) {
             }
 
             return response.status.isSuccess()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             e.printStackTrace()
             return false
@@ -43,6 +48,8 @@ class NextcloudClient(private val client: HttpClient) {
                 println("Download failed: ${response.status}")
                 null
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             e.printStackTrace()
             null

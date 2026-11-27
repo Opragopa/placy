@@ -1,0 +1,50 @@
+name: Android unit tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  group: unit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Run unit tests
+        run: ./gradlew :composeApp:unitBranchCoverage
+      - name: Preserve unit test results
+        if: always()
+        run: |
+          mkdir -p test-evidence/unit
+          cp -R composeApp/build/test-results/testDebugUnitTest test-evidence/unit/ 2>/dev/null || true
+      - name: Run HTTP integration checks
+        id: integration
+        run: ./gradlew :composeApp:testDebugUnitTest -PonlyIntegration=true
+      - name: Preserve integration test results
+        if: ${{ always() && steps.integration.outcome != 'skipped' }}
+        run: |
+          mkdir -p test-evidence/integration
+          cp -R composeApp/build/test-results/testDebugUnitTest test-evidence/integration/ 2>/dev/null || true
+      - name: Compile Android instrumentation tests
+        run: ./gradlew :composeApp:assembleDebugAndroidTest
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-unit-results
+          path: |
+            composeApp/build/reports/tests/
+            test-evidence/
+            composeApp/build/reports/jacoco/
+          if-no-files-found: warn

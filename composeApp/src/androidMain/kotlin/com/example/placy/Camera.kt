@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import io.github.ismoy.imagepickerkmp.domain.config.ImagePickerConfig
@@ -34,6 +36,7 @@ fun CameraView(navController: NavController, latitude: Double, longitude: Double
 
     val nextcloudClient = remember { NextcloudClient(NetworkModule.httpClient) }
     val api = remember { ApiService(NetworkModule.httpClient) }
+    val publisher = remember { PhotoPublisher(nextcloudClient::uploadImage, api::saveMark) }
 
     LaunchedEffect(Unit) {
         // Небольшая задержка перед открытием камеры
@@ -56,6 +59,7 @@ fun CameraView(navController: NavController, latitude: Double, longitude: Double
             Box (
                 modifier = Modifier
                     .fillMaxSize()
+                    .semantics { contentDescription = "Камера готова" }
                     .background(Color.Black)
                     .padding(
                         top = WindowInsets.statusBars
@@ -72,20 +76,14 @@ fun CameraView(navController: NavController, latitude: Double, longitude: Double
                             cameraState = CameraState.Uploading
                             scope.launch {
                                 val photoId = UUID.randomUUID().toString()
-
-                                val bytes = result.loadBytes()
-
-                                val isUploaded = nextcloudClient.uploadImage(bytes, photoId)
-
-                                if (isUploaded) {
-                                    api.saveMark(
-                                        GeoMark(
-                                            photoUUID = photoId,
-                                            latitude = latitude,
-                                            longitude = longitude
-                                        )
-                                    )
+                                val error = publishCapturedPhoto(
+                                    load = { result.loadBytes() },
+                                    publish = { bytes -> publisher.publish(bytes, photoId, latitude, longitude) }
+                                )
+                                if (error == null) {
                                     navController.popBackStack()
+                                } else {
+                                    cameraState = CameraState.Error(error)
                                 }
                             }
                         },

@@ -1,5 +1,8 @@
 // ApiServiceTest.kt
-package com.example.placy
+package com.example.placy.tests.api
+
+import com.example.placy.ApiService
+import com.example.placy.GeoMark
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -18,7 +21,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class ApiServiceTest {
+class ApiServiceUnitTest {
     private fun createMockHttpClient(responseData: String, statusCode: HttpStatusCode): HttpClient {
         return HttpClient(MockEngine) {
             engine {
@@ -44,10 +47,7 @@ class ApiServiceTest {
 
         val result = apiService.getAllMarks()
 
-        assertEquals(1, result.size)
-        assertEquals("123", result[0].photoUUID)
-        assertEquals(55.0, result[0].latitude, 0.001)
-        assertEquals(37.0, result[0].longitude, 0.001)
+        assertEquals(listOf(GeoMark("123", 55.0, 37.0)), result)
     }
 
     @Test
