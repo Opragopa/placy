@@ -1,4 +1,7 @@
-package com.example.placy
+package com.example.placy.tests.publication
+
+import com.example.placy.ApiService
+import com.example.placy.GeoMark
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine

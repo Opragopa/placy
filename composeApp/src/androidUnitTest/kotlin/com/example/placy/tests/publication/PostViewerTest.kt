@@ -1,4 +1,9 @@
-package com.example.placy
+package com.example.placy.tests.publication
+
+import com.example.placy.GeoMark
+import com.example.placy.PostViewerAction
+import com.example.placy.PostViewerState
+import com.example.placy.reducePostViewer
 
 import org.junit.Test
 import kotlin.test.assertEquals
