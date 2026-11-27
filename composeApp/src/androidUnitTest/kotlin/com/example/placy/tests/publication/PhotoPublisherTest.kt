@@ -1,4 +1,8 @@
-package com.example.placy
+package com.example.placy.tests.publication
+
+import com.example.placy.GeoMark
+import com.example.placy.PhotoPublisher
+import com.example.placy.PublishResult
 
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -47,8 +51,8 @@ class PhotoPublisherTest {
     @Test fun distinctSubmissionsKeepTheirOwnIdentifiers() = runTest {
         val marks = mutableListOf<GeoMark>()
         val publisher = PhotoPublisher({ _, _ -> true }, { marks += it; true })
-        publisher.publish(byteArrayOf(1), "a", 1.0, 2.0)
-        publisher.publish(byteArrayOf(2), "b", 3.0, 4.0)
+        assertEquals(PublishResult.Success, publisher.publish(byteArrayOf(1), "a", 1.0, 2.0))
+        assertEquals(PublishResult.Success, publisher.publish(byteArrayOf(2), "b", 3.0, 4.0))
         assertEquals(listOf(GeoMark("a", 1.0, 2.0), GeoMark("b", 3.0, 4.0)), marks)
     }
     @Test fun uploadExceptionPropagatesAndSkipsSave() = runTest {
