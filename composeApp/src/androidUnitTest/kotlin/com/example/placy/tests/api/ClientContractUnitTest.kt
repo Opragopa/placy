@@ -1,4 +1,8 @@
-package com.example.placy
+package com.example.placy.tests.api
+
+import com.example.placy.ApiService
+import com.example.placy.GeoMark
+import com.example.placy.NextcloudClient
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -25,12 +29,15 @@ import kotlin.test.assertTrue
 class ClientContractUnitTest {
     @Test fun saveSendsCoordinatesAsJson() = runTest {
         var body = ""
+        var url = ""
         val http = HttpClient(MockEngine { request ->
+            url = request.url.toString()
             body = request.body.toByteArray().decodeToString()
             respond("", HttpStatusCode.Created)
         }) { install(ContentNegotiation) { json() } }
         try {
-            assertTrue(ApiService(http).saveMark(GeoMark("photo-1", -12.5, 180.0)))
+            assertTrue(ApiService(http, "https://api.example.invalid").saveMark(GeoMark("photo-1", -12.5, 180.0)))
+            assertEquals("https://api.example.invalid/geomarks", url)
             val parsed = Json.parseToJsonElement(body).jsonObject
             assertEquals("photo-1", parsed.getValue("photoUUID").jsonPrimitive.content)
             assertEquals("-12.5", parsed.getValue("latitude").jsonPrimitive.content)
@@ -88,18 +95,21 @@ class ClientContractUnitTest {
 
     @Test fun uploadUsesJpegAndPreservesBytes() = runTest {
         var method = ""
+        var path = ""
         var body = byteArrayOf()
         var type: ContentType? = null
         val http = HttpClient(MockEngine { request ->
             method = request.method.value
+            path = request.url.encodedPath
             body = request.body.toByteArray()
             type = request.body.contentType
             respond("", HttpStatusCode.Created)
         })
         try {
             val expected = byteArrayOf(0, 1, -1)
-            assertTrue(NextcloudClient(http).uploadImage(expected, "photo"))
+            assertTrue(NextcloudClient(http, "https://files.example.invalid", "alice").uploadImage(expected, "photo"))
             assertEquals("PUT", method)
+            assertEquals("/remote.php/dav/files/alice/photo.jpg", path)
             assertEquals(ContentType.Image.JPEG, type)
             assertContentEquals(expected, body)
         } finally { http.close() }
