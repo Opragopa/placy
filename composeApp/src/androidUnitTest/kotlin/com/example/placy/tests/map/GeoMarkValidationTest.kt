@@ -1,4 +1,8 @@
-package com.example.placy
+package com.example.placy.tests.map
+
+import com.example.placy.ApiService
+import com.example.placy.GeoMark
+import com.example.placy.hasValidCoordinates
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -39,9 +43,9 @@ class GeoMarkValidationTest {
     }
     @Test fun invalidServerCoordinatesAreExcludedWithoutDiscardingValidMarks() = runTest {
         val http = HttpClient(MockEngine {
-            respond("""[{"photoUUID":"ok","latitude":90.0,"longitude":180.0},{"photoUUID":"bad","latitude":91.0,"longitude":0.0}]""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            respond("""[{"photoUUID":"ok","latitude":90.0,"longitude":180.0},{"photoUUID":"bad-latitude","latitude":91.0,"longitude":0.0},{"photoUUID":"bad-longitude","latitude":0.0,"longitude":181.0},{"photoUUID":"last","latitude":-90.0,"longitude":-180.0}]""", HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
         }) { install(ContentNegotiation) { json() } }
-        try { assertEquals(listOf(GeoMark("ok", 90.0, 180.0)), ApiService(http).getAllMarks()) }
+        try { assertEquals(listOf(GeoMark("ok", 90.0, 180.0), GeoMark("last", -90.0, -180.0)), ApiService(http).getAllMarks()) }
         finally { http.close() }
     }
 }
