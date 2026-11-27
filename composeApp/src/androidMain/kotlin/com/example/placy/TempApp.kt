@@ -142,11 +142,7 @@ fun TempMapScreen() {
                             iconStyle = IconStyle(
                                 anchor = PointF(0.5f, 1f),
                                 rotationType = RotationType.ROTATE,
-                                scale = when {
-                                    cameraPositionState.position.zoom < 8f -> 0.3f
-                                    cameraPositionState.position.zoom < 13f -> 0.4f
-                                    else -> 0.5f
-                                },
+                                scale = publicationMarkerScale(cameraPositionState.position.zoom),
                                 zIndex = 1f
                             ),
                             onTap = {

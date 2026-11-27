@@ -23,7 +23,6 @@ import androidx.navigation.NavController
 import io.github.ismoy.imagepickerkmp.domain.config.ImagePickerConfig
 import io.github.ismoy.imagepickerkmp.domain.extensions.loadBytes
 import io.github.ismoy.imagepickerkmp.presentation.ui.components.ImagePickerLauncher
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -76,21 +75,15 @@ fun CameraView(navController: NavController, latitude: Double, longitude: Double
                         onPhotoCaptured = { result ->
                             cameraState = CameraState.Uploading
                             scope.launch {
-                                try {
-                                    val photoId = UUID.randomUUID().toString()
-                                    val bytes = result.loadBytes()
-                                    when (publisher.publish(bytes, photoId, latitude, longitude)) {
-                                        PublishResult.Success -> navController.popBackStack()
-                                        PublishResult.EmptyImage -> cameraState = CameraState.Error("Фотография не содержит данных")
-                                        PublishResult.InvalidPhotoId -> cameraState = CameraState.Error("Некорректный идентификатор фотографии")
-                                        PublishResult.InvalidCoordinates -> cameraState = CameraState.Error("Некорректные координаты")
-                                        PublishResult.UploadFailed -> cameraState = CameraState.Error("Не удалось загрузить фотографию")
-                                        PublishResult.MetadataFailed -> cameraState = CameraState.Error("Не удалось сохранить публикацию")
-                                    }
-                                } catch (e: CancellationException) {
-                                    throw e
-                                } catch (e: Exception) {
-                                    cameraState = CameraState.Error("Не удалось обработать фотографию")
+                                val photoId = UUID.randomUUID().toString()
+                                val error = publishCapturedPhoto(
+                                    load = { result.loadBytes() },
+                                    publish = { bytes -> publisher.publish(bytes, photoId, latitude, longitude) }
+                                )
+                                if (error == null) {
+                                    navController.popBackStack()
+                                } else {
+                                    cameraState = CameraState.Error(error)
                                 }
                             }
                         },
